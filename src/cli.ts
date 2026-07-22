@@ -3,6 +3,7 @@ import { select, input, checkbox } from '@inquirer/prompts';
 import { loadCv } from './data/loadCv.js';
 import { resolveJobDescription, type JdSource } from './jd/getJobDescription.js';
 import { createCv, type Language } from './actions/createCv.js';
+import { optimizeCv } from './actions/optimizeCv.js';
 
 async function promptLanguage(): Promise<Language> {
   return select<Language>({
@@ -48,10 +49,13 @@ async function promptJobDescription(): Promise<string> {
 
 async function main() {
   const language = await promptLanguage();
-  await promptJobDescription();
+  const jobDescription = await promptJobDescription();
   const actions = await checkbox({
     message: 'What do you want to do?',
-    choices: [{ name: 'Create CV', value: 'create' }],
+    choices: [
+      { name: 'Create CV', value: 'create' },
+      { name: 'Optimize CV for this role', value: 'optimize' },
+    ],
   });
 
   const cv = loadCv('data/cv.yaml');
@@ -60,6 +64,9 @@ async function main() {
   const outputs: string[] = [];
   if (actions.includes('create')) {
     outputs.push(await createCv(cv, language, slug));
+  }
+  if (actions.includes('optimize')) {
+    outputs.push(await optimizeCv(cv, jobDescription, language, slug));
   }
 
   console.log('\nDone! Generated files:');
