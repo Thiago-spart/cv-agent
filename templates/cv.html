@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>{{name}} - CV</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 40px; }
+  h1 { margin-bottom: 0; }
+  h2 { border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 24px; }
+  .title { color: #555; margin-top: 4px; }
+  .contact { font-size: 0.9em; color: #555; margin-top: 8px; }
+  .entry { margin-top: 12px; }
+  .entry-header { font-weight: bold; }
+  .entry-meta { font-style: italic; color: #666; font-size: 0.9em; }
+  ul { margin-top: 4px; }
+  .skills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill { background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; }
+</style>
+</head>
+<body>
+  <h1>{{name}}</h1>
+  <div class="title">{{title}}</div>
+  <div class="contact">
+    {{contact.email}}{{#if contact.phone}} &middot; {{contact.phone}}{{/if}}{{#if contact.location}} &middot; {{contact.location}}{{/if}}
+  </div>
+
+  <h2>Summary</h2>
+  <p>{{summary}}</p>
+
+  <h2>Experience</h2>
+  {{#each experience}}
+  <div class="entry">
+    <div class="entry-header">{{this.role}} &mdash; {{this.company}}</div>
+    <div class="entry-meta">{{this.startDate}} - {{#if this.endDate}}{{this.endDate}}{{else}}Present{{/if}}{{#if this.location}} &middot; {{this.location}}{{/if}}</div>
+    <ul>
+      {{#each this.highlights}}
+      <li>{{this}}</li>
+      {{/each}}
+    </ul>
+  </div>
+  {{/each}}
+
+  {{#if education.length}}
+  <h2>Education</h2>
+  {{#each education}}
+  <div class="entry">
+    <div class="entry-header">{{this.degree}} &mdash; {{this.institution}}</div>
+    <div class="entry-meta">{{this.startDate}} - {{#if this.endDate}}{{this.endDate}}{{else}}Present{{/if}}</div>
+    {{#if this.details}}<p>{{this.details}}</p>{{/if}}
+  </div>
+  {{/each}}
+  {{/if}}
+
+  <h2>Skills</h2>
+  <div class="skills">
+    {{#each skills}}
+    <span class="skill">{{this}}</span>
+    {{/each}}
+  </div>
+
+  {{#if projects.length}}
+  <h2>Projects</h2>
+  {{#each projects}}
+  <div class="entry">
+    <div class="entry-header">{{this.name}}</div>
+    <p>{{this.description}}</p>
+    {{#if this.highlights.length}}
+    <ul>
+      {{#each this.highlights}}
+      <li>{{this}}</li>
+      {{/each}}
+    </ul>
+    {{/if}}
+  </div>
+  {{/each}}
+  {{/if}}
+
+  {{#if languages.length}}
+  <h2>Languages</h2>
+  <ul>
+    {{#each languages}}
+    <li>{{this.name}} &mdash; {{this.level}}</li>
+    {{/each}}
+  </ul>
+  {{/if}}
+</body>
+</html>

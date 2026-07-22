@@ -1,0 +1,46 @@
+name: "Your Name"
+title: "Your Professional Title"
+contact:
+  email: "you@example.com"
+  phone: "+55 11 91234-5678"
+  location: "São Paulo, Brazil"
+  linkedin: "https://linkedin.com/in/yourprofile"
+  github: "https://github.com/yourhandle"
+summary: >
+  A concise 2-4 sentence summary of your professional background and what
+  you're looking for next.
+experience:
+  - company: "Company Name"
+    role: "Your Role"
+    location: "Remote"
+    startDate: "2022-01"
+    endDate: "Present"
+    highlights:
+      - "A quantified achievement or responsibility."
+      - "Another quantified achievement or responsibility."
+  - company: "Previous Company"
+    role: "Previous Role"
+    startDate: "2019-03"
+    endDate: "2021-12"
+    highlights:
+      - "An achievement from this role."
+education:
+  - institution: "University Name"
+    degree: "Degree, Major"
+    startDate: "2015-01"
+    endDate: "2018-12"
+skills:
+  - "Skill 1"
+  - "Skill 2"
+  - "Skill 3"
+projects:
+  - name: "Side Project Name"
+    description: "One sentence describing what it does and why."
+    url: "https://github.com/yourhandle/project"
+    highlights:
+      - "Something notable about it."
+languages:
+  - name: "Portuguese"
+    level: "Native"
+  - name: "English"
+    level: "Fluent"

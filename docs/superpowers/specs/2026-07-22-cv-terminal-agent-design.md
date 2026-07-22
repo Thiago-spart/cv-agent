@@ -21,7 +21,7 @@ Running the CLI launches an interactive wizard:
    - `create CV`
    - `optimize CV for this role`
    - `draft outreach email`
-4. Runs the chosen action(s), calls the Claude API for generation, writes
+4. Runs the chosen action(s), calls the Gemini API for generation, writes
    output file(s) to `output/`, and prints the resulting file paths.
 
 ## Data & Templates
@@ -43,20 +43,23 @@ Running the CLI launches an interactive wizard:
 
 ## Actions & LLM Logic
 
-All three actions share one Claude API client wrapper
-(`src/llm/client.ts`), which reads `ANTHROPIC_API_KEY` from `.env` and fails
-fast with a clear message before the wizard starts if it's missing.
+All three actions share one Gemini API client wrapper
+(`src/llm/client.ts`), which reads `GEMINI_API_KEY` from `.env` and fails
+fast with a clear message before the wizard starts if it's missing. Gemini
+was chosen over Claude for this project specifically because its Developer
+API has a genuine no-cost free tier, suitable for a personal, low-volume
+tool like this one.
 
 - **Create CV**: load `cv.yaml` → if target language ≠ base language, ask
-  Claude to translate/adapt content (preserving structure, dates, proper
+  Gemini to translate/adapt content (preserving structure, dates, proper
   nouns) → fill `cv.html` → render PDF.
-- **Optimize CV for role**: load `cv.yaml` + JD text → ask Claude to select,
+- **Optimize CV for role**: load `cv.yaml` + JD text → ask Gemini to select,
   reorder, and reword bullets/skills that best match the JD (translating if
   needed) → same render pipeline → PDF. **The master `cv.yaml` is never
   modified** — output is always a tailored copy, so the source-of-truth stays
   safe to reuse across roles.
 - **Draft outreach email**: load `cv.yaml` (for background) + JD text → ask
-  Claude to draft a short application/outreach email in the target language →
+  Gemini to draft a short application/outreach email in the target language →
   save as a `.md` file under `output/`. No Gmail integration in v1 (that would
   require a separate Google Cloud OAuth client since this is a standalone
   script, outside Claude Code's own Gmail integration) — can be added later as
@@ -64,7 +67,7 @@ fast with a clear message before the wizard starts if it's missing.
 
 ### Error handling
 
-- Missing `ANTHROPIC_API_KEY` → fail before the wizard runs, with a message
+- Missing `GEMINI_API_KEY` → fail before the wizard runs, with a message
   pointing at `.env.example`.
 - Invalid/incomplete `cv.yaml` → validation error naming the specific
   field/section.
@@ -85,7 +88,7 @@ cv_agent/
     cli.ts                 wizard entry point
     data/loadCv.ts          load + validate cv.yaml
     jd/getJobDescription.ts paste / file / URL handlers
-    llm/client.ts           Claude API wrapper
+    llm/client.ts           Gemini API wrapper
     actions/createCv.ts
     actions/optimizeCv.ts
     actions/draftEmail.ts

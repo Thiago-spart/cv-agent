@@ -1,0 +1,24 @@
+name: "Jane Doe"
+title: "Backend Engineer"
+contact:
+  email: "jane@example.com"
+  location: "São Paulo, Brazil"
+summary: "Backend engineer with 6 years of experience building distributed systems."
+experience:
+  - company: "Acme Corp"
+    role: "Senior Backend Engineer"
+    location: "Remote"
+    startDate: "2021-01"
+    endDate: "Present"
+    highlights:
+      - "Led migration of monolith to microservices, reducing deploy time by 70%."
+      - "Mentored 3 junior engineers."
+education:
+  - institution: "Universidade de São Paulo"
+    degree: "B.Sc. Computer Science"
+    startDate: "2013-01"
+    endDate: "2017-12"
+skills:
+  - "TypeScript"
+  - "Node.js"
+  - "PostgreSQL"

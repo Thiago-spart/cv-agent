@@ -1,0 +1,12 @@
+name: "Jane Doe"
+title: "Backend Engineer"
+contact:
+  email: "not-an-email"
+summary: ""
+experience:
+  - company: "Acme Corp"
+    role: "Senior Backend Engineer"
+    startDate: "2021-01"
+    highlights: []
+education: []
+skills: []

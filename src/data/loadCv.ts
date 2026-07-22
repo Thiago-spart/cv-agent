@@ -1,0 +1,39 @@
+import fs from 'node:fs';
+import yaml from 'js-yaml';
+import { cvSchema, type Cv } from './cvSchema.js';
+
+export class CvValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CvValidationError';
+  }
+}
+
+export function loadCv(filePath: string): Cv {
+  if (!fs.existsSync(filePath)) {
+    throw new CvValidationError(
+      `CV data file not found at ${filePath}. Copy data/cv.example.yaml to data/cv.yaml and fill in your details.`
+    );
+  }
+
+  const raw = fs.readFileSync(filePath, 'utf8');
+
+  let parsed: unknown;
+  try {
+    parsed = yaml.load(raw);
+  } catch (error) {
+    throw new CvValidationError(
+      `Could not parse YAML in ${filePath}: ${(error as Error).message}`
+    );
+  }
+
+  const result = cvSchema.safeParse(parsed);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((issue) => `- ${issue.path.join('.')}: ${issue.message}`)
+      .join('\n');
+    throw new CvValidationError(`Invalid CV data in ${filePath}:\n${issues}`);
+  }
+
+  return result.data;
+}
