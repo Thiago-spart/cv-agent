@@ -1,31 +1,31 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 
 export class MissingApiKeyError extends Error {}
 
-let client: Anthropic | null = null;
+let client: GoogleGenAI | null = null;
 
-function getClient(): Anthropic {
+function getClient(): GoogleGenAI {
   if (client) return client;
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new MissingApiKeyError(
-      'ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key.'
+      'GEMINI_API_KEY is not set. Copy .env.example to .env and add your key.'
     );
   }
-  client = new Anthropic({ apiKey });
+  client = new GoogleGenAI({ apiKey });
   return client;
 }
 
 export async function generateText(prompt: string): Promise<string> {
-  const anthropic = getClient();
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
+  const ai = getClient();
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: { maxOutputTokens: 4096 },
   });
-  const block = message.content[0];
-  if (block.type !== 'text') {
-    throw new Error('Unexpected response content type from Claude API.');
+  const text = response.text;
+  if (!text) {
+    throw new Error('Unexpected empty response from Gemini API.');
   }
-  return block.text;
+  return text;
 }
