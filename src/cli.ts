@@ -4,6 +4,7 @@ import { loadCv } from './data/loadCv.js';
 import { resolveJobDescription, type JdSource } from './jd/getJobDescription.js';
 import { createCv, type Language } from './actions/createCv.js';
 import { optimizeCv } from './actions/optimizeCv.js';
+import { draftEmail } from './actions/draftEmail.js';
 
 async function promptLanguage(): Promise<Language> {
   return select<Language>({
@@ -55,6 +56,7 @@ async function main() {
     choices: [
       { name: 'Create CV', value: 'create' },
       { name: 'Optimize CV for this role', value: 'optimize' },
+      { name: 'Draft outreach email', value: 'email' },
     ],
   });
 
@@ -67,6 +69,9 @@ async function main() {
   }
   if (actions.includes('optimize')) {
     outputs.push(await optimizeCv(cv, jobDescription, language, slug));
+  }
+  if (actions.includes('email')) {
+    outputs.push(await draftEmail(cv, jobDescription, language, slug));
   }
 
   console.log('\nDone! Generated files:');
