@@ -26,4 +26,15 @@ describe('loadCv', () => {
   it('throws CvValidationError when the file does not exist', () => {
     expect(() => loadCv(path.join(fixturesDir, 'missing.yaml'))).toThrowError(CvValidationError);
   });
+
+  it('throws CvValidationError when YAML syntax is malformed', () => {
+    expect(() => loadCv(path.join(fixturesDir, 'malformed-syntax.yaml'))).toThrowError(CvValidationError);
+    try {
+      loadCv(path.join(fixturesDir, 'malformed-syntax.yaml'));
+      throw new Error('expected loadCv to throw');
+    } catch (error) {
+      expect((error as Error).message).toContain('Could not parse YAML');
+      expect((error as Error).message).toContain('malformed-syntax.yaml');
+    }
+  });
 });

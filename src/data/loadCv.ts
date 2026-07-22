@@ -2,7 +2,12 @@ import fs from 'node:fs';
 import yaml from 'js-yaml';
 import { cvSchema, type Cv } from './cvSchema.js';
 
-export class CvValidationError extends Error {}
+export class CvValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CvValidationError';
+  }
+}
 
 export function loadCv(filePath: string): Cv {
   if (!fs.existsSync(filePath)) {
@@ -12,7 +17,15 @@ export function loadCv(filePath: string): Cv {
   }
 
   const raw = fs.readFileSync(filePath, 'utf8');
-  const parsed = yaml.load(raw);
+
+  let parsed: unknown;
+  try {
+    parsed = yaml.load(raw);
+  } catch (error) {
+    throw new CvValidationError(
+      `Could not parse YAML in ${filePath}: ${(error as Error).message}`
+    );
+  }
 
   const result = cvSchema.safeParse(parsed);
   if (!result.success) {

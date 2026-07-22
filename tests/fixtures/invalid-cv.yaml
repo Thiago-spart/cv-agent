@@ -2,6 +2,7 @@ name: "Jane Doe"
 title: "Backend Engineer"
 contact:
   email: "not-an-email"
+summary: ""
 experience:
   - company: "Acme Corp"
     role: "Senior Backend Engineer"
