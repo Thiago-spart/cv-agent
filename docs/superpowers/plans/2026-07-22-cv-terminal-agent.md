@@ -6,7 +6,7 @@
 
 **Architecture:** An interactive wizard (`src/cli.ts`, using `@inquirer/prompts`) composes small, single-purpose modules: a validated data loader for `data/cv.yaml`, a job-description resolver (paste/file/URL), a thin Gemini API client, an HTML-template-to-PDF renderer, and three action modules (create/optimize/draft-email) that each call the LLM client and renderer.
 
-**Tech Stack:** Node.js >= 18, TypeScript (strict, ESM/NodeNext), `@inquirer/prompts` (wizard), `js-yaml` + `zod` (data loading/validation), `@google/genai` (LLM calls via the Gemini API's free tier), `handlebars` (HTML templating), `puppeteer` (HTML → PDF), `dotenv` (env vars), `vitest` (tests), `eslint` + `@typescript-eslint` (lint), GitHub Actions (CI).
+**Tech Stack:** Node.js >= 20, TypeScript (strict, ESM/NodeNext), `@inquirer/prompts` (wizard), `js-yaml` + `zod` (data loading/validation), `@google/genai` (LLM calls via the Gemini API's free tier), `handlebars` (HTML templating), `puppeteer` (HTML → PDF), `dotenv` (env vars), `vitest` (tests), `eslint` + `@typescript-eslint` (lint), GitHub Actions (CI).
 
 > **Note:** Tasks 1-9 were originally implemented against `@anthropic-ai/sdk`
 > (Claude). Mid-implementation, the project switched LLM providers to
@@ -18,7 +18,7 @@
 
 ## Global Constraints
 
-- Node.js >= 18 (`engines` field in `package.json`); TypeScript `strict: true`.
+- Node.js >= 20 (`engines` field in `package.json` — raised from >=18 when `@google/genai` was added, which itself requires Node >=20); TypeScript `strict: true`.
 - `data/cv.yaml` holds real personal data — it is gitignored and must never be committed. `data/cv.example.yaml` (placeholder values) is the committed template.
 - The "optimize" action must never write back to `data/cv.yaml` — it only reads it and produces a separate tailored output file.
 - Default CV language is `pt-BR`; `en` is the only other supported language for v1, produced by on-the-fly LLM translation of the pt-BR base data (no parallel per-language content in `cv.yaml`).
@@ -54,7 +54,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": { "node": ">=20" },
   "scripts": {
     "start": "tsx src/cli.ts",
     "build": "tsc",
