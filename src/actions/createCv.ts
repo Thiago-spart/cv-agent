@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Cv } from '../data/cvSchema.js';
-import { generateText } from '../llm/client.js';
+import { generateJson } from '../llm/client.js';
 import { fillCvTemplate } from '../render/fillTemplate.js';
 import { renderHtmlToPdf } from '../render/renderPdf.js';
 
@@ -20,8 +20,14 @@ async function translateCvIfNeeded(cv: Cv, language: Language): Promise<Cv> {
     JSON.stringify(cv, null, 2),
   ].join('\n');
 
-  const response = await generateText(prompt);
-  return JSON.parse(response) as Cv;
+  const response = await generateJson(prompt);
+  try {
+    return JSON.parse(response) as Cv;
+  } catch (error) {
+    throw new Error(
+      `Gemini returned invalid JSON: ${(error as Error).message}. Raw response (first 200 chars): ${response.slice(0, 200)}`
+    );
+  }
 }
 
 export async function createCv(cv: Cv, language: Language, slug: string): Promise<string> {

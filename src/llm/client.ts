@@ -16,16 +16,29 @@ function getClient(): GoogleGenAI {
   return client;
 }
 
-export async function generateText(prompt: string): Promise<string> {
+async function generateContent(prompt: string, responseMimeType?: string): Promise<string> {
   const ai = getClient();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: prompt,
-    config: { maxOutputTokens: 4096 },
+    config: { maxOutputTokens: 4096, ...(responseMimeType ? { responseMimeType } : {}) },
   });
   const text = response.text;
   if (!text) {
     throw new Error('Unexpected empty response from Gemini API.');
   }
   return text;
+}
+
+export async function generateText(prompt: string): Promise<string> {
+  return generateContent(prompt);
+}
+
+/**
+ * Same as generateText, but constrains Gemini to emit raw JSON (no markdown
+ * fences) via responseMimeType: 'application/json'. Use this for any prompt
+ * whose output will be JSON.parse'd.
+ */
+export async function generateJson(prompt: string): Promise<string> {
+  return generateContent(prompt, 'application/json');
 }

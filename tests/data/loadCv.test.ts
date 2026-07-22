@@ -18,6 +18,7 @@ describe('loadCv', () => {
       loadCv(path.join(fixturesDir, 'invalid-cv.yaml'));
       throw new Error('expected loadCv to throw');
     } catch (error) {
+      expect((error as Error).name).toBe('CvValidationError');
       expect((error as Error).message).toContain('summary is required');
       expect((error as Error).message).toContain('contact.email must be a valid email');
     }

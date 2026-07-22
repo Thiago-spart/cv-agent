@@ -54,7 +54,14 @@ export async function resolveJobDescription(source: JdSource): Promise<string> {
       `Fetching ${source.url} returned HTTP ${response.status}. Please paste the job description text instead.`
     );
   }
-  const html = await response.text();
+  let html: string;
+  try {
+    html = await response.text();
+  } catch {
+    throw new JobDescriptionError(
+      `Could not read response body from ${source.url}. Please paste the job description text instead.`
+    );
+  }
   const text = stripHtml(html);
   if (text.length < 50) {
     throw new JobDescriptionError(
