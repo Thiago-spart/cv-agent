@@ -4,9 +4,17 @@
 
 **Goal:** Build a standalone Node/TypeScript CLI that walks the user through choosing a CV language, supplying a job description, and creating/optimizing a CV or drafting an outreach email — as a set of independently testable, bottom-up layers.
 
-**Architecture:** An interactive wizard (`src/cli.ts`, using `@inquirer/prompts`) composes small, single-purpose modules: a validated data loader for `data/cv.yaml`, a job-description resolver (paste/file/URL), a thin Claude API client, an HTML-template-to-PDF renderer, and three action modules (create/optimize/draft-email) that each call the LLM client and renderer.
+**Architecture:** An interactive wizard (`src/cli.ts`, using `@inquirer/prompts`) composes small, single-purpose modules: a validated data loader for `data/cv.yaml`, a job-description resolver (paste/file/URL), a thin Gemini API client, an HTML-template-to-PDF renderer, and three action modules (create/optimize/draft-email) that each call the LLM client and renderer.
 
-**Tech Stack:** Node.js >= 18, TypeScript (strict, ESM/NodeNext), `@inquirer/prompts` (wizard), `js-yaml` + `zod` (data loading/validation), `@anthropic-ai/sdk` (LLM calls), `handlebars` (HTML templating), `puppeteer` (HTML → PDF), `dotenv` (env vars), `vitest` (tests), `eslint` + `@typescript-eslint` (lint), GitHub Actions (CI).
+**Tech Stack:** Node.js >= 18, TypeScript (strict, ESM/NodeNext), `@inquirer/prompts` (wizard), `js-yaml` + `zod` (data loading/validation), `@google/genai` (LLM calls via the Gemini API's free tier), `handlebars` (HTML templating), `puppeteer` (HTML → PDF), `dotenv` (env vars), `vitest` (tests), `eslint` + `@typescript-eslint` (lint), GitHub Actions (CI).
+
+> **Note:** Tasks 1-9 were originally implemented against `@anthropic-ai/sdk`
+> (Claude). Mid-implementation, the project switched LLM providers to
+> Google's Gemini API for its no-cost free tier — better suited to a
+> personal, low-volume tool than a pay-as-you-go key. `src/llm/client.ts`
+> (Task 6) still exports the same `generateText`/`MissingApiKeyError` names,
+> so no other file needed to change. This plan document has been updated
+> throughout to reflect Gemini as the final, correct provider.
 
 ## Global Constraints
 
@@ -16,7 +24,7 @@
 - Default CV language is `pt-BR`; `en` is the only other supported language for v1, produced by on-the-fly LLM translation of the pt-BR base data (no parallel per-language content in `cv.yaml`).
 - Gmail integration is out of scope for v1 — the draft-email action writes a local `.md` file under `output/`.
 - CI (`.github/workflows/ci.yml`) runs lint, typecheck, and unit tests only — no build step, no smoke test, no real LLM calls in CI.
-- `ANTHROPIC_API_KEY` is read from `.env` via `dotenv` — the app must fail with a clear message if it's missing, never silently proceed or hardcode a key.
+- `GEMINI_API_KEY` is read from `.env` via `dotenv` — the app must fail with a clear message if it's missing, never silently proceed or hardcode a key.
 - Repository is public (`Thiago-spart/cv-agent`) — never commit secrets or personal data.
 
 ---
@@ -55,7 +63,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0",
+    "@google/genai": "^2.13.0",
     "@inquirer/prompts": "^7.0.0",
     "dotenv": "^16.4.5",
     "handlebars": "^4.7.8",
@@ -149,8 +157,12 @@ export default defineConfig({
 - [ ] **Step 5: Create `.env.example`**
 
 ```
-ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
 ```
+
+(Originally `ANTHROPIC_API_KEY=` when this task was first implemented against
+Claude; corrected to `GEMINI_API_KEY=` as part of the Task 6 provider swap —
+see the note under this plan's Tech Stack section.)
 
 - [ ] **Step 6: Create `.gitignore`**
 
@@ -841,14 +853,22 @@ git push
 
 ---
 
-### Task 6: Claude API client wrapper
+### Task 6: Gemini API client wrapper
+
+> **Provider swap note:** this task was originally implemented and reviewed
+> against `@anthropic-ai/sdk` (Claude), using `ANTHROPIC_API_KEY` and the
+> model id `claude-sonnet-5`. Mid-implementation (after Task 9), the project
+> switched to Google's Gemini API for its free tier. The section below
+> reflects the corrected, final version built with `@google/genai`. The
+> exported names (`generateText`, `MissingApiKeyError`) are unchanged, so no
+> other task's files needed to change because of this swap.
 
 **Files:**
 - Create: `src/llm/client.ts`
 - Test: `tests/llm/client.test.ts`
 
 **Interfaces:**
-- Consumes: `ANTHROPIC_API_KEY` from `process.env` (loaded via `dotenv/config` in `cli.ts`).
+- Consumes: `GEMINI_API_KEY` from `process.env` (loaded via `dotenv/config` in `cli.ts`).
 - Produces: `export class MissingApiKeyError extends Error`, `export async function generateText(prompt: string): Promise<string>` — used by Tasks 9, 10, 11.
 
 - [ ] **Step 1: Write the failing test — `tests/llm/client.test.ts`**
@@ -858,21 +878,21 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { generateText, MissingApiKeyError } from '../../src/llm/client.js';
 
 describe('generateText', () => {
-  const originalKey = process.env.ANTHROPIC_API_KEY;
+  const originalKey = process.env.GEMINI_API_KEY;
 
   beforeEach(() => {
-    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
   });
 
   afterEach(() => {
     if (originalKey === undefined) {
-      delete process.env.ANTHROPIC_API_KEY;
+      delete process.env.GEMINI_API_KEY;
     } else {
-      process.env.ANTHROPIC_API_KEY = originalKey;
+      process.env.GEMINI_API_KEY = originalKey;
     }
   });
 
-  it('throws MissingApiKeyError when ANTHROPIC_API_KEY is not set', async () => {
+  it('throws MissingApiKeyError when GEMINI_API_KEY is not set', async () => {
     await expect(generateText('hello')).rejects.toThrowError(MissingApiKeyError);
   });
 });
@@ -886,36 +906,36 @@ Expected: FAIL — `Cannot find module '../../src/llm/client.js'`
 - [ ] **Step 3: Write `src/llm/client.ts`**
 
 ```ts
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 
 export class MissingApiKeyError extends Error {}
 
-let client: Anthropic | null = null;
+let client: GoogleGenAI | null = null;
 
-function getClient(): Anthropic {
+function getClient(): GoogleGenAI {
   if (client) return client;
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new MissingApiKeyError(
-      'ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key.'
+      'GEMINI_API_KEY is not set. Copy .env.example to .env and add your key.'
     );
   }
-  client = new Anthropic({ apiKey });
+  client = new GoogleGenAI({ apiKey });
   return client;
 }
 
 export async function generateText(prompt: string): Promise<string> {
-  const anthropic = getClient();
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-5',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
+  const ai = getClient();
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: { maxOutputTokens: 4096 },
   });
-  const block = message.content[0];
-  if (block.type !== 'text') {
-    throw new Error('Unexpected response content type from Claude API.');
+  const text = response.text;
+  if (!text) {
+    throw new Error('Unexpected empty response from Gemini API.');
   }
-  return block.text;
+  return text;
 }
 ```
 
@@ -932,8 +952,8 @@ Expected: all pass
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/llm/client.ts tests/llm/client.test.ts
-git commit -m "feat: add Claude API client wrapper with missing-key guard"
+git add package.json package-lock.json .env.example src/llm/client.ts tests/llm/client.test.ts
+git commit -m "feat: add Gemini API client wrapper with missing-key guard"
 git push
 ```
 
@@ -1340,7 +1360,7 @@ Expected: all pass
 
 - [ ] **Step 4: Manual verification**
 
-Ensure `.env` has a real `ANTHROPIC_API_KEY` (copy from `.env.example`), then run:
+Ensure `.env` has a real `GEMINI_API_KEY` (copy from `.env.example`), then run:
 
 ```bash
 npm start
