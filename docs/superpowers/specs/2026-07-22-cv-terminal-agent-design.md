@@ -106,6 +106,44 @@ exhaustive:
   end-to-end runs, not automated tests (output quality is judged by the user,
   not asserted programmatically).
 
+## Implementation Phases (bottom-up by layer)
+
+Each phase is runnable and independently verifiable end-to-end before the
+next one starts:
+
+1. **CLI skeleton + data layer** — wizard shell (language prompt only for
+   now) + `src/data/loadCv.ts` loading and validating `data/cv.yaml`.
+   Verify: running the CLI prints the loaded CV data or a clear validation
+   error.
+2. **JD input handling** — `src/jd/getJobDescription.ts` for paste / file /
+   URL, wired into the wizard as the second prompt. Verify: all three input
+   modes produce the expected plain-text JD, URL failure falls back to
+   asking for paste.
+3. **Create CV action** — `src/llm/client.ts`, `templates/cv.html`,
+   `src/render/renderPdf.ts`, `src/actions/createCv.ts`. Verify: running
+   `create CV` produces a real PDF from `data/cv.yaml` in both languages.
+4. **Optimize CV action** — `src/actions/optimizeCv.ts`, reusing the render
+   pipeline from phase 3. Verify: given a sample JD, output is visibly
+   tailored (reordered/reworded) versus the phase-3 output, and
+   `data/cv.yaml` is untouched.
+5. **Draft email action** — `src/actions/draftEmail.ts`. Verify: given a
+   sample JD, produces a plausible application email saved to `output/`.
+
+## GitHub Repository & CI
+
+- Public GitHub repo named `cv-agent`.
+- `data/cv.yaml` is **gitignored** — it will hold real personal data and must
+  never land in a public repo. A `data/cv.example.yaml` with placeholder
+  values is committed instead, so the schema is documented without exposing
+  anything real. `.gitignore` also excludes `output/`, `.env`, and
+  `node_modules/`.
+- Versioning is plain git history on GitHub (commits/branches/PRs per phase)
+  — no formal tagged-release process for v1.
+- CI: GitHub Actions workflow running on push/PR — ESLint, `tsc --noEmit`,
+  and the unit test suite (schema validation + JD-source-selection tests from
+  the Testing section above). No build/smoke-test step and no real LLM calls
+  in CI for v1.
+
 ## Out of scope (v1)
 
 - Gmail draft push integration (deferred; emails are written to local files
@@ -116,3 +154,7 @@ exhaustive:
   extraction only).
 - Editing/improving `cv.yaml` itself as part of "optimize" (deferred; optimize
   only affects the tailored output copy).
+- Tagged/semver releases (deferred; plain git history is the version record
+  for v1).
+- CI build/smoke-test step and CI-side LLM calls (deferred; CI covers lint,
+  typecheck, and unit tests only).
