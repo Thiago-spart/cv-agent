@@ -15,6 +15,16 @@
 > (Task 6) still exports the same `generateText`/`MissingApiKeyError` names,
 > so no other file needed to change. This plan document has been updated
 > throughout to reflect Gemini as the final, correct provider.
+>
+> During live verification, the model id `gemini-2.5-flash` (used in Task
+> 6's original code below) turned out to be unavailable to this project's
+> API key ("no longer available to new users"). The actual shipped code
+> uses `gemini-flash-latest` instead — an alias Google provides specifically
+> so callers aren't pinned to a dated model version that gets deprecated.
+> Also, after all 11 tasks were complete, the final whole-branch review
+> added a `generateJson` variant (using `responseMimeType: 'application/json'`)
+> for the two JSON-returning callers (`createCv.ts`, `optimizeCv.ts`); plain
+> `generateText` (shown below) remains for `draftEmail.ts`'s free-form prose.
 
 ## Global Constraints
 
@@ -927,7 +937,7 @@ function getClient(): GoogleGenAI {
 export async function generateText(prompt: string): Promise<string> {
   const ai = getClient();
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-flash-latest',
     contents: prompt,
     config: { maxOutputTokens: 4096 },
   });
