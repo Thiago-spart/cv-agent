@@ -48,13 +48,11 @@ async function promptJobDescription(): Promise<string> {
 
 async function main() {
   const language = await promptLanguage();
+  await promptJobDescription();
   const actions = await checkbox({
     message: 'What do you want to do?',
     choices: [{ name: 'Create CV', value: 'create' }],
   });
-
-  const needsJd = actions.includes('optimize') || actions.includes('email');
-  const jobDescription = needsJd ? await promptJobDescription() : '';
 
   const cv = loadCv('data/cv.yaml');
   const slug = await input({ message: 'Short slug for filenames (e.g. acme-backend):' });

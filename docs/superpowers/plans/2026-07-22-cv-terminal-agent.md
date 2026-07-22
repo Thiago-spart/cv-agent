@@ -1305,13 +1305,11 @@ async function promptJobDescription(): Promise<string> {
 
 async function main() {
   const language = await promptLanguage();
+  await promptJobDescription();
   const actions = await checkbox({
     message: 'What do you want to do?',
     choices: [{ name: 'Create CV', value: 'create' }],
   });
-
-  const needsJd = actions.includes('optimize') || actions.includes('email');
-  const jobDescription = needsJd ? await promptJobDescription() : '';
 
   const cv = loadCv('data/cv.yaml');
   const slug = await input({ message: 'Short slug for filenames (e.g. acme-backend):' });
@@ -1333,6 +1331,8 @@ main().catch((error) => {
 });
 ```
 
+(`await promptJobDescription();` here intentionally discards the return value — no action in this task's checkbox needs it yet. It's still prompted for, matching the spec's fixed wizard order [language → JD → action], and awaiting it without binding it to a name means `promptJobDescription`/`resolveJobDescription`/`JdSource` all stay genuinely used, so `no-unused-vars` doesn't fire. Task 10 changes this line to `const jobDescription = await promptJobDescription();` once the "optimize" action needs the value.)
+
 - [ ] **Step 3: Run full verification**
 
 Run: `npm run lint && npm run typecheck && npm test`
@@ -1346,7 +1346,7 @@ Ensure `.env` has a real `ANTHROPIC_API_KEY` (copy from `.env.example`), then ru
 npm start
 ```
 
-Expected: select language `pt-BR`, check "Create CV", enter a slug; a real PDF appears at `output/cv-pt-BR-<slug>-<date>.pdf`. Repeat selecting `en` and confirm the output PDF content is translated to English while dates/company names are preserved.
+Expected: select language `pt-BR`, provide any job description text when prompted (its content doesn't affect this task's output yet), check "Create CV", enter a slug; a real PDF appears at `output/cv-pt-BR-<slug>-<date>.pdf`. Repeat selecting `en` and confirm the output PDF content is translated to English while dates/company names are preserved.
 
 - [ ] **Step 5: Commit**
 
@@ -1423,6 +1423,20 @@ to:
 import { createCv, type Language } from './actions/createCv.js';
 import { optimizeCv } from './actions/optimizeCv.js';
 ```
+
+Change the JD prompt line in `main()` from:
+
+```ts
+  await promptJobDescription();
+```
+
+to:
+
+```ts
+  const jobDescription = await promptJobDescription();
+```
+
+(now that "optimize" needs the value.)
 
 Change the checkbox choices in `main()` from:
 
