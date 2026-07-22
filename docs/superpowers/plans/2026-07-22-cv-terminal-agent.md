@@ -32,10 +32,11 @@
 - Create: `.gitignore`
 - Create: `tests/sanity.test.ts`
 - Create: `output/.gitkeep`
+- Create: `src/cli.ts` (placeholder — see Step 9; Task 4 replaces its contents)
 
 **Interfaces:**
 - Consumes: nothing (first task).
-- Produces: npm scripts `start`, `build`, `typecheck`, `lint`, `test` that every later task relies on for verification.
+- Produces: npm scripts `start`, `build`, `typecheck`, `lint`, `test` that every later task relies on for verification. Also produces a placeholder `src/cli.ts`, because `tsconfig.json`'s `rootDir`/`include` point at `src/`, and `tsc --noEmit` fails with `TS18003: No inputs were found` if that directory has no `.ts` files yet — Task 4 overwrites this placeholder with the real wizard entry point.
 
 - [ ] **Step 1: Create `package.json`**
 
@@ -113,6 +114,13 @@ export default [
         sourceType: 'module',
         ecmaVersion: 2022,
       },
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': tseslint,
@@ -123,6 +131,8 @@ export default [
   },
 ];
 ```
+
+(The `globals` block is required — later tasks' code uses `console`, `process`, etc., and without it ESLint's `no-undef` rule flags every one of those as an undefined reference.)
 
 - [ ] **Step 4: Create `vitest.config.ts`**
 
@@ -172,20 +182,29 @@ describe('project scaffolding', () => {
 });
 ```
 
-- [ ] **Step 9: Install dependencies**
+- [ ] **Step 9: Create placeholder `src/cli.ts`**
+
+```ts
+console.log('cv-agent scaffolding OK');
+```
+
+(Exists only so `tsc --noEmit` has a file to compile; Task 4 replaces this
+file's contents with the real wizard entry point.)
+
+- [ ] **Step 10: Install dependencies**
 
 Run: `npm install`
 Expected: installs without error, creates `package-lock.json`.
 
-- [ ] **Step 10: Verify lint, typecheck, and test all pass**
+- [ ] **Step 11: Verify lint, typecheck, and test all pass**
 
 Run: `npm run lint && npm run typecheck && npm test`
 Expected: all three succeed; `npm test` reports 1 passed test.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
-git add package.json package-lock.json tsconfig.json eslint.config.js vitest.config.ts .env.example .gitignore tests/sanity.test.ts output/.gitkeep
+git add package.json package-lock.json tsconfig.json eslint.config.js vitest.config.ts .env.example .gitignore tests/sanity.test.ts output/.gitkeep src/cli.ts
 git commit -m "chore: scaffold project (package.json, tsconfig, eslint, vitest)"
 git push
 ```
@@ -508,13 +527,13 @@ git push
 ### Task 4: CLI skeleton (language prompt + data load)
 
 **Files:**
-- Create: `src/cli.ts`
+- Modify: `src/cli.ts` (replaces Task 1's placeholder `console.log('cv-agent scaffolding OK')` entirely)
 
 **Interfaces:**
 - Consumes: `loadCv` from `src/data/loadCv.ts` (Task 3).
 - Produces: a runnable entry point; `export type Language = 'pt-BR' | 'en'` (this local definition moves to `src/actions/createCv.ts` in Task 9 — cli.ts will import it from there instead).
 
-- [ ] **Step 1: Create `src/cli.ts`**
+- [ ] **Step 1: Replace `src/cli.ts` contents**
 
 ```ts
 import 'dotenv/config';
