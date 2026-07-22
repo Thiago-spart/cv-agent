@@ -1,9 +1,8 @@
 import 'dotenv/config';
-import { select, input } from '@inquirer/prompts';
+import { select, input, checkbox } from '@inquirer/prompts';
 import { loadCv } from './data/loadCv.js';
 import { resolveJobDescription, type JdSource } from './jd/getJobDescription.js';
-
-export type Language = 'pt-BR' | 'en';
+import { createCv, type Language } from './actions/createCv.js';
 
 async function promptLanguage(): Promise<Language> {
   return select<Language>({
@@ -49,10 +48,26 @@ async function promptJobDescription(): Promise<string> {
 
 async function main() {
   const language = await promptLanguage();
-  const jobDescription = await promptJobDescription();
+  const actions = await checkbox({
+    message: 'What do you want to do?',
+    choices: [{ name: 'Create CV', value: 'create' }],
+  });
+
+  const needsJd = actions.includes('optimize') || actions.includes('email');
+  const jobDescription = needsJd ? await promptJobDescription() : '';
+
   const cv = loadCv('data/cv.yaml');
-  console.log(`Loaded CV for ${cv.name} (${cv.title}). Selected language: ${language}.`);
-  console.log(`Job description (${jobDescription.length} chars):\n${jobDescription.slice(0, 200)}...`);
+  const slug = await input({ message: 'Short slug for filenames (e.g. acme-backend):' });
+
+  const outputs: string[] = [];
+  if (actions.includes('create')) {
+    outputs.push(await createCv(cv, language, slug));
+  }
+
+  console.log('\nDone! Generated files:');
+  for (const file of outputs) {
+    console.log(`  - ${file}`);
+  }
 }
 
 main().catch((error) => {
