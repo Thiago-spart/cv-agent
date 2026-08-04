@@ -32,7 +32,7 @@ async function translateCvIfNeeded(cv: Cv, language: Language): Promise<Cv> {
 
 export async function createCv(cv: Cv, language: Language, slug: string): Promise<string> {
   const translated = await translateCvIfNeeded(cv, language);
-  const html = fillCvTemplate(translated);
+  const html = fillCvTemplate(translated, language);
   const date = new Date().toISOString().slice(0, 10);
   const outputPath = path.join(process.cwd(), 'output', `cv-${language}-${slug}-${date}.pdf`);
   return renderHtmlToPdf(html, outputPath);
