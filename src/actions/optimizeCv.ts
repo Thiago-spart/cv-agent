@@ -34,7 +34,7 @@ export async function optimizeCv(
       `Gemini returned invalid JSON: ${(error as Error).message}. Raw response (first 200 chars): ${response.slice(0, 200)}`
     );
   }
-  const html = fillCvTemplate(tailored);
+  const html = fillCvTemplate(tailored, language);
   const date = new Date().toISOString().slice(0, 10);
   const outputPath = path.join(process.cwd(), 'output', `cv-optimized-${language}-${slug}-${date}.pdf`);
   return renderHtmlToPdf(html, outputPath);
