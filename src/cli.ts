@@ -1,10 +1,13 @@
 import 'dotenv/config';
+import fs from 'node:fs/promises';
 import { select, input, checkbox } from '@inquirer/prompts';
 import { loadCv } from './data/loadCv.js';
 import { resolveJobDescription, type JdSource } from './jd/getJobDescription.js';
 import { createCv, type Language } from './actions/createCv.js';
 import { optimizeCv } from './actions/optimizeCv.js';
-import { draftEmail } from './actions/draftEmail.js';
+import { draftEmail, writeEmailOutput } from './actions/draftEmail.js';
+import { renderCvToPdf } from './render/renderCvToPdf.js';
+import { parseCliArgs, type CliOptions } from './cli/parseArgs.js';
 
 async function promptLanguage(): Promise<Language> {
   return select<Language>({
@@ -48,7 +51,59 @@ async function promptJobDescription(): Promise<string> {
   }
 }
 
-async function main() {
+async function runNonInteractive(options: CliOptions): Promise<void> {
+  const outputs: string[] = [];
+
+  const needsCv =
+    (options.actions.includes('create') && options.input === undefined) ||
+    (options.actions.includes('optimize') && options.input === undefined) ||
+    (options.actions.includes('email') && options.body === undefined);
+  const cv = needsCv ? loadCv(options.cvPath) : undefined;
+
+  const needsJd =
+    (options.actions.includes('optimize') && options.input === undefined) ||
+    (options.actions.includes('email') && options.body === undefined);
+  const jobDescription =
+    needsJd && options.jdSource ? await resolveJobDescription(options.jdSource) : undefined;
+
+  if (options.actions.includes('create')) {
+    if (options.input !== undefined) {
+      const inputCv = loadCv(options.input);
+      outputs.push(await renderCvToPdf(inputCv, options.language, options.slug, 'cv'));
+    } else {
+      outputs.push(await createCv(cv!, options.language, options.slug));
+    }
+  }
+
+  if (options.actions.includes('optimize')) {
+    if (options.input !== undefined) {
+      const inputCv = loadCv(options.input);
+      outputs.push(await renderCvToPdf(inputCv, options.language, options.slug, 'cv-optimized'));
+    } else {
+      outputs.push(await optimizeCv(cv!, jobDescription!, options.language, options.slug));
+    }
+  }
+
+  if (options.actions.includes('email')) {
+    if (options.body !== undefined) {
+      const body = await fs.readFile(options.body, 'utf8');
+      outputs.push(await writeEmailOutput(body, options.language, options.slug));
+    } else {
+      outputs.push(await draftEmail(cv!, jobDescription!, options.language, options.slug));
+    }
+  }
+
+  if (options.json) {
+    console.log(JSON.stringify({ outputs }));
+  } else {
+    console.log('\nDone! Generated files:');
+    for (const file of outputs) {
+      console.log(`  - ${file}`);
+    }
+  }
+}
+
+async function runInteractive(): Promise<void> {
   const language = await promptLanguage();
   const jobDescription = await promptJobDescription();
   const actions = await checkbox({
@@ -80,7 +135,21 @@ async function main() {
   }
 }
 
+async function main() {
+  const options = parseCliArgs(process.argv.slice(2));
+  if (options) {
+    await runNonInteractive(options);
+    return;
+  }
+  await runInteractive();
+}
+
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
+  const message = error instanceof Error ? error.message : String(error);
+  if (process.argv.includes('--json')) {
+    console.log(JSON.stringify({ error: message }));
+  } else {
+    console.error(message);
+  }
   process.exitCode = 1;
 });
