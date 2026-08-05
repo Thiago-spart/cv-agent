@@ -1,8 +1,6 @@
-import path from 'node:path';
 import type { Cv } from '../data/cvSchema.js';
 import { generateJson } from '../llm/client.js';
-import { fillCvTemplate } from '../render/fillTemplate.js';
-import { renderHtmlToPdf } from '../render/renderPdf.js';
+import { renderCvToPdf } from '../render/renderCvToPdf.js';
 
 export type Language = 'pt-BR' | 'en';
 
@@ -32,8 +30,5 @@ async function translateCvIfNeeded(cv: Cv, language: Language): Promise<Cv> {
 
 export async function createCv(cv: Cv, language: Language, slug: string): Promise<string> {
   const translated = await translateCvIfNeeded(cv, language);
-  const html = fillCvTemplate(translated, language);
-  const date = new Date().toISOString().slice(0, 10);
-  const outputPath = path.join(process.cwd(), 'output', `cv-${language}-${slug}-${date}.pdf`);
-  return renderHtmlToPdf(html, outputPath);
+  return renderCvToPdf(translated, language, slug, 'cv');
 }

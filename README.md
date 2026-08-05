@@ -53,6 +53,26 @@ The wizard will ask for:
 Generated files (PDFs, HTML fallbacks, email drafts) are written to
 `output/`, which is also gitignored.
 
+## Non-interactive / scripted usage
+
+For scripted or agent-driven use, skip the wizard entirely with CLI flags:
+
+```bash
+npx tsx src/cli.ts --action optimize --lang pt-BR \
+  --jd-file ./job-posting.txt --slug acme-backend --json
+```
+
+- `--action <list>` — required. Comma-separated subset of `create`, `optimize`, `email`.
+- `--lang <pt-BR|en>` — optional, default `pt-BR`.
+- `--cv <path>` — optional, default `data/cv.yaml`.
+- `--slug <str>` — required. Used in output filenames.
+- `--jd-text <str>` / `--jd-file <path>` / `--jd-url <url>` — mutually exclusive. Required for `optimize`/`email` unless the matching bypass flag below is used.
+- `--input <path>` — for `create`/`optimize`: skip the Gemini call entirely and render this pre-tailored CV file (same schema as `data/cv.yaml`) directly.
+- `--body <path>` — for `email`: skip the Gemini call entirely and write this pre-written plain-text file as the email body.
+- `--json` — print exactly `{"outputs": [...]}` on success or `{"error": "..."}` on failure instead of the human-readable summary, and set a non-zero exit code on failure.
+
+The `--input`/`--body` bypass flags are for callers (including other AI agents) that have already produced final, tailored CV/email content themselves — it skips the tool's own Gemini round-trip entirely.
+
 ## Development
 
 ```bash

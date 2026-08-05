@@ -6,6 +6,14 @@ import { generateText } from '../llm/client.js';
 
 const TONE_GUIDE_PATH = path.join(process.cwd(), 'templates', 'email.md');
 
+export async function writeEmailOutput(body: string, language: Language, slug: string): Promise<string> {
+  const date = new Date().toISOString().slice(0, 10);
+  const outputPath = path.join(process.cwd(), 'output', `email-${language}-${slug}-${date}.md`);
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, body.trim() + '\n', 'utf8');
+  return outputPath;
+}
+
 export async function draftEmail(
   cv: Cv,
   jobDescription: string,
@@ -29,9 +37,5 @@ export async function draftEmail(
   ].join('\n');
 
   const body = await generateText(prompt);
-  const date = new Date().toISOString().slice(0, 10);
-  const outputPath = path.join(process.cwd(), 'output', `email-${language}-${slug}-${date}.md`);
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, body.trim() + '\n', 'utf8');
-  return outputPath;
+  return writeEmailOutput(body.trim(), language, slug);
 }
