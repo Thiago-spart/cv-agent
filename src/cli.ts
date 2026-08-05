@@ -86,7 +86,12 @@ async function runNonInteractive(options: CliOptions): Promise<void> {
 
   if (options.actions.includes('email')) {
     if (options.body !== undefined) {
-      const body = await fs.readFile(options.body, 'utf8');
+      let body: string;
+      try {
+        body = await fs.readFile(options.body, 'utf8');
+      } catch {
+        throw new Error(`Could not read email body file at ${options.body}.`);
+      }
       outputs.push(await writeEmailOutput(body, options.language, options.slug));
     } else {
       outputs.push(await draftEmail(cv!, jobDescription!, options.language, options.slug));

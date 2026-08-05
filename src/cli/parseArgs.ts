@@ -46,7 +46,11 @@ function parseFlags(argv: string[]): Map<string, string | true> {
     const raw = arg.slice(2);
     const eqIndex = raw.indexOf('=');
     if (eqIndex !== -1) {
-      flags.set(raw.slice(0, eqIndex), raw.slice(eqIndex + 1));
+      const key = raw.slice(0, eqIndex);
+      if (key === 'json') {
+        throw new CliArgsError('--json does not take a value; use --json on its own.');
+      }
+      flags.set(key, raw.slice(eqIndex + 1));
       continue;
     }
     if (raw === 'json') {
@@ -78,12 +82,13 @@ export function parseCliArgs(argv: string[]): CliOptions | null {
   if (typeof actionRaw !== 'string' || actionRaw.trim() === '') {
     throw new CliArgsError('Missing required flag: --action <create,optimize,email>');
   }
-  const actions = actionRaw.split(',').map((value) => value.trim()) as CliAction[];
-  for (const action of actions) {
+  const rawActions = actionRaw.split(',').map((value) => value.trim()) as CliAction[];
+  for (const action of rawActions) {
     if (!VALID_ACTIONS.includes(action)) {
       throw new CliArgsError(`Unknown action: ${action}. Expected one of ${VALID_ACTIONS.join(', ')}.`);
     }
   }
+  const actions = [...new Set(rawActions)];
 
   const slug = flags.get('slug');
   if (typeof slug !== 'string' || slug.trim() === '') {

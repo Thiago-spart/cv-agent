@@ -96,4 +96,21 @@ describe('parseCliArgs', () => {
   it('throws when a flag is missing its value', () => {
     expect(() => parseCliArgs(['--action', 'create', '--slug'])).toThrow(CliArgsError);
   });
+
+  it('throws on --json=true instead of silently disabling JSON mode', () => {
+    expect(() =>
+      parseCliArgs(['--action', 'create', '--slug', 'x', '--json=true'])
+    ).toThrow(CliArgsError);
+  });
+
+  it('throws on --json=false instead of silently accepting it', () => {
+    expect(() =>
+      parseCliArgs(['--action', 'create', '--slug', 'x', '--json=false'])
+    ).toThrow(CliArgsError);
+  });
+
+  it('deduplicates repeated --action values', () => {
+    const options = parseCliArgs(['--action', 'create,create', '--slug', 'x']);
+    expect(options?.actions).toEqual(['create']);
+  });
 });
