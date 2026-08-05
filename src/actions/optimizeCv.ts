@@ -1,9 +1,7 @@
-import path from 'node:path';
 import type { Cv } from '../data/cvSchema.js';
 import type { Language } from './createCv.js';
 import { generateJson } from '../llm/client.js';
-import { fillCvTemplate } from '../render/fillTemplate.js';
-import { renderHtmlToPdf } from '../render/renderPdf.js';
+import { renderCvToPdf } from '../render/renderCvToPdf.js';
 
 export async function optimizeCv(
   cv: Cv,
@@ -34,8 +32,5 @@ export async function optimizeCv(
       `Gemini returned invalid JSON: ${(error as Error).message}. Raw response (first 200 chars): ${response.slice(0, 200)}`
     );
   }
-  const html = fillCvTemplate(tailored, language);
-  const date = new Date().toISOString().slice(0, 10);
-  const outputPath = path.join(process.cwd(), 'output', `cv-optimized-${language}-${slug}-${date}.pdf`);
-  return renderHtmlToPdf(html, outputPath);
+  return renderCvToPdf(tailored, language, slug, 'cv-optimized');
 }
